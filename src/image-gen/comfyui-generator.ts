@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { StoryGenerator } from '../generators/index.js';
 import type { GenerationContext, SceneUnit } from '../types/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -241,53 +242,10 @@ Scene Context:
   }
 
   private buildPromptFromScene(scene: SceneUnit, context: GenerationContext): string {
-    const broll = scene.broll_image_brief;
+    // Use the existing StoryGenerator buildBrollPrompt method
+    const generator = new StoryGenerator();
     
-    // Build character descriptions using frame-specific recasts
-    const charDescriptions: string[] = [];
-    for (const recast of broll.subject_recasts) {
-      const char = context.characters?.characters.find(c => c.id === recast.char_id);
-      
-      if (char) {
-        const parts = [
-          char.name,
-          char.visual_bible.age_range,
-          recast.ethnicity,
-          recast.skin_tone,
-          recast.eye_color,
-          char.visual_bible.hair,
-          ...recast.frame_specific_traits,
-          ...recast.frame_clothing_details,
-          recast.expression_state
-        ].filter(Boolean);
-        
-        charDescriptions.push(parts.join(', '));
-      }
-    }
-    
-    // Build location description from frame-specific setting
-    const location = context.locations?.locations.find(l => l.id === scene.setting.loc_id);
-    const baseLoc = location ? location.name : scene.setting.loc_id;
-    
-    const settingParts = [
-      baseLoc,
-      ...broll.frame_specific_setting.visible_objects,
-      ...broll.frame_specific_setting.atmospheric_elements,
-      ...broll.frame_specific_setting.composition_elements
-    ].filter(Boolean);
-    
-    // Combine elements
-    const parts = [
-      charDescriptions.join(' and '),
-      broll.activity_suggestion,
-      `at ${settingParts.join(', ')}`,
-      broll.framing.replace(/_/g, ' '),
-      broll.frame_specific_setting.lighting_quality,
-      `${scene.setting.time} ${scene.setting.weather}`.trim(),
-      broll.keywords.join(', ')
-    ].filter(Boolean);
-    
-    return parts.join(', ');
+    return generator.buildBrollPrompt(scene, context.characters!, context.locations!);
   }
 
   async generateBrollImages(context: GenerationContext, outputDir: string): Promise<void> {

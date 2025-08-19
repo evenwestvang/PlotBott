@@ -514,15 +514,15 @@ export const STORYWORLD_SCHEMA = {
         },
         "framing": {
           "type": "string",
-          "enum": ["over_shoulder","profile","reflection","through_glass","partial_occlusion","crop_past_face"]
+          "enum": ["candid_moment","caught_between","direct_address","environmental_portrait","observational","intimate_distance","contextual_wide","reaction_capture","transitional_beat"]
         },
         "activity_suggestion": { "type": "string" },
         "frame_specific_setting": { "$ref": "#/definitions/ImageSettingDetails" },
         "keywords": {
           "type": "array",
-          "items": { "enum": ["candid","amateur"] },
-          "minItems": 2,
-          "maxItems": 2,
+          "items": { "enum": ["candid","amateur","naturalistic","unposed","documentary"] },
+          "minItems": 5,
+          "maxItems": 5,
           "uniqueItems": true
         }
       }

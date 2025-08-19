@@ -455,7 +455,7 @@ CRITICAL: Output must be valid JSON with 3-5 scenes per episode matching this ex
             "expression_state": "concentrated determination"
           }
         ],
-        "framing": "profile",
+        "framing": "candid_moment",
         "activity_suggestion": "examining holographic data",
         "frame_specific_setting": {
           "visible_objects": ["floating data display", "glass architecture", "holographic interface"],
@@ -463,7 +463,7 @@ CRITICAL: Output must be valid JSON with 3-5 scenes per episode matching this ex
           "composition_elements": ["curved glass reflection", "geometric patterns"],
           "lighting_quality": "soft directional with blue accent"
         },
-        "keywords": ["candid", "amateur"]
+        "keywords": ["candid", "amateur", "naturalistic", "unposed", "documentary"]
       }
     }
   ]
@@ -471,13 +471,23 @@ CRITICAL: Output must be valid JSON with 3-5 scenes per episode matching this ex
 
 CRITICAL B-roll constraints:
 - subject_count must be 1 or 2 only
-- subject_ids must be subset of characters_present
-- keywords must be exactly ["candid", "amateur"]
-- framing must be: over_shoulder, profile, reflection, through_glass, partial_occlusion, or crop_past_face
+- subject_ids must be subset of characters_present  
+- keywords must be exactly ["candid", "amateur", "naturalistic", "unposed", "documentary"]
+- framing approaches for authentic, documentary feel:
+  * candid_moment: natural, unposed moment in action
+  * caught_between: character between two emotional states
+  * direct_address: looking at camera/friend taking photo, before/after scene event
+  * environmental_portrait: character in their natural space
+  * observational: distant, watching character in context  
+  * intimate_distance: close but not invasive, personal space
+  * contextual_wide: character small within their world
+  * reaction_capture: genuine response to scene events
+  * transitional_beat: moment of change or realization
 - subject_recasts must include ethnicity, skin_tone, eye_color for visual continuity
 - frame_specific_traits should describe what's VISIBLE in the chosen framing (2-5 traits)
-- visible_in_frame must match framing choice (profile = face/upper_body, etc.)
-- frame_specific_setting must detail scene-relevant objects and lighting
+- visible_in_frame must match framing choice 
+- frame_specific_setting must detail scene-relevant objects and atmospheric lighting
+- aesthetic should be naturalistic, untheatrical, documentary-style with emotional authenticity
 
 Requirements:
 - Generate 3-5 scenes per episode for proper dramatic pacing

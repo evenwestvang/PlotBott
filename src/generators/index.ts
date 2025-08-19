@@ -397,7 +397,7 @@ export class StoryGenerator {
     }
     
     // Fix keywords constraint
-    broll.keywords = ['candid', 'amateur'] as ['candid', 'amateur'];
+    broll.keywords = ['candid', 'amateur', 'naturalistic', 'unposed', 'documentary'] as ['candid', 'amateur', 'naturalistic', 'unposed', 'documentary'];
     
     // Fix time_offset to valid enum value
     if (broll.time_offset !== 'pre_scene' && broll.time_offset !== 'post_scene') {

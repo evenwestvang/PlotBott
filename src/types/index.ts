@@ -242,10 +242,10 @@ export interface BrollImageBrief {
   subject_count: 1 | 2;
   subject_ids: CharId[];
   subject_recasts: ImageCharacterRecast[];
-  framing: 'over_shoulder' | 'profile' | 'reflection' | 'through_glass' | 'partial_occlusion' | 'crop_past_face';
+  framing: 'candid_moment' | 'caught_between' | 'direct_address' | 'environmental_portrait' | 'observational' | 'intimate_distance' | 'contextual_wide' | 'reaction_capture' | 'transitional_beat';
   activity_suggestion: string;
   frame_specific_setting: ImageSettingDetails;
-  keywords: ['candid', 'amateur'];
+  keywords: ['candid', 'amateur', 'naturalistic', 'unposed', 'documentary'];
 }
 
 export interface SceneUnit {

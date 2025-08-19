@@ -160,8 +160,9 @@ export function validateReferentialIntegrity(context: GenerationContext): void {
           }
         }
         
-        if (broll.keywords.length !== 2 || !broll.keywords.includes('candid') || !broll.keywords.includes('amateur')) {
-          errors.push(`Scene ${scene.scene_no} b-roll keywords must be exactly ["candid", "amateur"]`);
+        const requiredKeywords = ['candid', 'amateur', 'naturalistic', 'unposed', 'documentary'] as const;
+        if (broll.keywords.length !== 5 || !requiredKeywords.every(k => broll.keywords.includes(k as any))) {
+          errors.push(`Scene ${scene.scene_no} b-roll keywords must be exactly ${JSON.stringify(requiredKeywords)}`);
         }
         
         // Value turn must actually turn
