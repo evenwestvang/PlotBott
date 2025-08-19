@@ -1,22 +1,25 @@
 #!/bin/bash
 
 # ComfyUI Setup Script for husk-bank project
-# Sets up ComfyUI with the workflow for story b-roll image generation
+# Sets up ComfyUI locally with the workflow for story b-roll image generation
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-COMFYUI_DIR="$PROJECT_ROOT/../ComfyUI"
+COMFYUI_DIR="$PROJECT_ROOT/bin/ComfyUI"
 
-echo "🔧 Setting up ComfyUI for b-roll image generation..."
+echo "🔧 Setting up ComfyUI locally for b-roll image generation..."
 echo "Project root: $PROJECT_ROOT"
 echo "ComfyUI will be installed at: $COMFYUI_DIR"
+
+# Create bin directory if it doesn't exist
+mkdir -p "$PROJECT_ROOT/bin"
 
 # Check if ComfyUI directory exists
 if [ ! -d "$COMFYUI_DIR" ]; then
     echo "📥 Cloning ComfyUI..."
-    cd "$(dirname "$PROJECT_ROOT")"
+    cd "$PROJECT_ROOT/bin"
     git clone https://github.com/comfyanonymous/ComfyUI.git
 else
     echo "✅ ComfyUI already exists at $COMFYUI_DIR"

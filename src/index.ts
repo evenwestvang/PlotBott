@@ -22,7 +22,7 @@ program
   .option('-o, --output <directory>', 'Output directory (auto-generated if not specified)')
   .option('--json-only', 'Only output raw JSON files')
   .option('--no-broll-prompts', 'Skip generating b-roll diffusion prompts')
-  .option('--no-images', 'Skip generating b-roll images with ComfyUI')
+  .option('--images', 'Generate b-roll images with ComfyUI (requires setup)')
   .option('--comfyui-server <url>', 'ComfyUI server URL', 'http://127.0.0.1:8188')
   .option('--comfyui-workflow <path>', 'Path to ComfyUI workflow JSON file')
   .action(async (concept, options) => {
@@ -48,7 +48,7 @@ program
       });
       
       // Generate images if requested
-      if (!options.noImages && !options.jsonOnly) {
+      if (options.images && !options.jsonOnly) {
         console.log('\n🎨 Starting b-roll image generation...');
         const comfyGenerator = new ComfyUIGenerator(
           options.comfyuiServer,
@@ -60,7 +60,7 @@ program
           await comfyGenerator.generateBrollImages(context, outputDir);
         } else {
           console.log('⚠️ ComfyUI not available - skipping image generation');
-          console.log('   To generate images, start ComfyUI server and run with --no-images flag disabled');
+          console.log('   To generate images, start ComfyUI server and run with --images flag');
         }
       }
       
@@ -858,7 +858,8 @@ function generateOutputDir(concept: string): string {
     .substring(0, 40)              // Limit length
     .replace(/^-+|-+$/g, '');      // Trim leading/trailing hyphens
   
-  const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const now = new Date();
+  const timestamp = now.toISOString().slice(0, 19).replace(/T/, '-').replace(/:/g, ''); // YYYY-MM-DD-HHMMSS
   return `./output/${timestamp}-${slug}`;
 }
 

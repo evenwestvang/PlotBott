@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { spawn } from 'child_process';
 import { StoryGenerator } from '../generators/index.js';
 import type { GenerationContext, SceneUnit } from '../types/index.js';
 
@@ -174,53 +175,28 @@ export class ComfyUIGenerator {
     return images;
   }
 
-  async generateSceneImage(scene: SceneUnit, context: GenerationContext, episodeNum: number): Promise<string | null> {
-    if (!this.workflow) {
-      console.error('Workflow not loaded');
-      return null;
-    }
-
-    if (!await this.checkServerStatus()) {
-      console.error('ComfyUI server not available');
-      return null;
-    }
-
+  async generateSceneImage(scene: SceneUnit, context: GenerationContext, episodeNum: number, outputDir: string): Promise<string | null> {
     try {
       // Build the prompt from scene's broll data
-      const prompt = this.buildPromptFromScene(scene, context);
+      const prompt = await this.buildPromptFromScene(scene, context, outputDir, episodeNum);
       console.log(`🎨 Generating image for Episode ${episodeNum}, Scene ${scene.scene_no}`);
       console.log(`📝 Prompt: ${prompt.substring(0, 100)}...`);
 
-      // Create a copy of the workflow and update the prompt
-      const workflowCopy = JSON.parse(JSON.stringify(this.workflow));
-      this.updateWorkflowPrompt(workflowCopy, prompt);
+      // Use local ComfyUI installation
+      const projectRoot = join(__dirname, '../../');
+      const comfyUIPath = join(projectRoot, 'bin/ComfyUI');
+      const imagesDir = join(outputDir, 'images');
+      await fs.mkdir(imagesDir, { recursive: true });
 
-      // Queue the prompt and wait for completion
-      const promptId = await this.queuePrompt(workflowCopy);
-      await this.waitForCompletion(promptId);
+      // Call the Python ComfyUI generator
+      const pythonResult = await this.runPythonComfyUI(comfyUIPath, prompt, imagesDir, `ep${episodeNum}-sc${scene.scene_no}`);
 
-      // Get the generated images
-      const images = await this.getGeneratedImages(promptId);
-      
-      if (images.length === 0) {
-        console.error('No images generated');
-        return null;
-      }
-
-      // Save the first image
-      const outputDir = join(process.cwd(), 'output', 'images');
-      await fs.mkdir(outputDir, { recursive: true });
-
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = `episode-${episodeNum}-scene-${scene.scene_no}-${timestamp}.png`;
-      const imagePath = join(outputDir, filename);
-
-      await fs.writeFile(imagePath, images[0]);
-      console.log(`✅ Image saved: ${imagePath}`);
-
-      // Save prompt metadata
-      const metadataPath = imagePath.replace('.png', '.txt');
-      const metadata = `Episode ${episodeNum}, Scene ${scene.scene_no}
+      if (pythonResult) {
+        console.log(`✅ Image saved: ${pythonResult}`);
+        
+        // Save prompt metadata
+        const metadataPath = pythonResult.replace('.png', '.txt');
+        const metadata = `Episode ${episodeNum}, Scene ${scene.scene_no}
 Generated: ${new Date().toISOString()}
 Prompt: ${prompt}
 
@@ -230,10 +206,12 @@ Scene Context:
 - Objective: ${scene.objective}
 - Value Shift: ${scene.scene_value_shift.from} → ${scene.scene_value_shift.to}
 `;
-      
-      await fs.writeFile(metadataPath, metadata, 'utf8');
+        
+        await fs.writeFile(metadataPath, metadata, 'utf8');
+        return pythonResult;
+      }
 
-      return imagePath;
+      return null;
 
     } catch (error) {
       console.error(`Failed to generate image for Scene ${scene.scene_no}:`, error);
@@ -241,11 +219,181 @@ Scene Context:
     }
   }
 
-  private buildPromptFromScene(scene: SceneUnit, context: GenerationContext): string {
-    // Use the existing StoryGenerator buildBrollPrompt method
-    const generator = new StoryGenerator();
+  private async runPythonComfyUI(comfyUIPath: string, prompt: string, outputDir: string, filename: string): Promise<string | null> {
+    return new Promise((resolve, reject) => {
+      // Create a direct ComfyUI API script using the workflow from mall-deths
+      const mallDeathsWorkflow = '/Users/even/projects/personal/mall-deths/comfyui_workflow.json';
+      const pythonScript = `
+import sys
+import os
+import json
+import requests
+import time
+import random
+from datetime import datetime
+
+# Add mall-deths to path to access the workflow
+workflow_path = '${mallDeathsWorkflow}'
+
+try:
+    # Load the workflow - use it as-is, just update the prompt text
+    with open(workflow_path, 'r') as f:
+        workflow = json.load(f)
     
-    return generator.buildBrollPrompt(scene, context.characters!, context.locations!);
+    prompt_text = '''${prompt.replace(/'/g, "\\'")}'''
+    
+    # Find and update the positive prompt node
+    for node in workflow.get('nodes', []):
+        if node.get('type') == 'CLIPTextEncode':
+            # Update the first CLIPTextEncode node's text (positive prompt)
+            if 'widgets_values' in node and len(node['widgets_values']) > 0:
+                node['widgets_values'][0] = prompt_text
+                break
+    
+    # Queue the workflow directly (web format should work)
+    server_url = 'http://127.0.0.1:8188'
+    prompt_data = {'prompt': workflow}
+    
+    response = requests.post(f'{server_url}/prompt', 
+                           headers={'Content-Type': 'application/json'},
+                           json=prompt_data)
+    
+    if response.status_code == 200:
+        result = response.json()
+        prompt_id = result.get('prompt_id')
+        
+        if prompt_id:
+            # Wait for completion
+            max_wait = 120  # 2 minutes
+            wait_time = 0
+            
+            while wait_time < max_wait:
+                time.sleep(2)
+                wait_time += 2
+                
+                history_response = requests.get(f'{server_url}/history/{prompt_id}')
+                if history_response.status_code == 200:
+                    history = history_response.json()
+                    if prompt_id in history and history[prompt_id].get('status', {}).get('completed'):
+                        # Get generated images
+                        outputs = history[prompt_id].get('outputs', {})
+                        
+                        for node_id, node_output in outputs.items():
+                            if 'images' in node_output:
+                                for img_info in node_output['images']:
+                                    img_filename = img_info['filename']
+                                    img_subfolder = img_info.get('subfolder', '')
+                                    img_type = img_info.get('type', 'output')
+                                    
+                                    # Download the image
+                                    img_url = f'{server_url}/view?filename={img_filename}&subfolder={img_subfolder}&type={img_type}'
+                                    img_response = requests.get(img_url)
+                                    
+                                    if img_response.status_code == 200:
+                                        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                                        new_filename = f'{filename}-{timestamp}.png'
+                                        new_path = os.path.join('${outputDir}', new_filename)
+                                        
+                                        with open(new_path, 'wb') as f:
+                                            f.write(img_response.content)
+                                        
+                                        print(f"SUCCESS:{new_path}")
+                                        exit(0)
+                        
+                        print("ERROR:No images found in output")
+                        exit(1)
+            
+            print("ERROR:Timeout waiting for generation")
+            exit(1)
+        else:
+            print("ERROR:No prompt_id returned")
+            exit(1)
+    else:
+        print(f"ERROR:Failed to queue prompt: {response.status_code} {response.text}")
+        exit(1)
+        
+except Exception as e:
+    print(f"ERROR:{str(e)}")
+    exit(1)
+`;
+
+      const python = spawn('python', ['-c', pythonScript], {
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+
+      let output = '';
+      let error = '';
+
+      python.stdout.on('data', (data) => {
+        output += data.toString();
+      });
+
+      python.stderr.on('data', (data) => {
+        error += data.toString();
+      });
+
+      python.on('close', (code) => {
+        if (code === 0 && output.includes('SUCCESS:')) {
+          const imagePath = output.split('SUCCESS:')[1].trim();
+          resolve(imagePath);
+        } else {
+          console.error('Python ComfyUI error:', error);
+          console.error('Python ComfyUI output:', output);
+          resolve(null);
+        }
+      });
+
+      // Set timeout
+      setTimeout(() => {
+        python.kill();
+        reject(new Error('ComfyUI generation timeout'));
+      }, 120000); // 2 minute timeout
+    });
+  }
+
+  private async buildPromptFromScene(scene: SceneUnit, context: GenerationContext, outputDir: string, episodeNum: number): Promise<string> {
+    // Try to read the generated broll-prompts.md file and extract the prompt
+    const brollPromptsPath = join(outputDir, 'broll-prompts.md');
+    
+    try {
+      const brollContent = await fs.readFile(brollPromptsPath, 'utf8');
+      
+      // Look for the specific scene prompt using regex
+      const scenePattern = new RegExp(`# Episode ${episodeNum} B-roll Prompts[\\s\\S]*?## Scene ${scene.scene_no}[\\s\\S]*?\`\`\`([\\s\\S]*?)\`\`\``, 'i');
+      const match = brollContent.match(scenePattern);
+      
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+    } catch (error) {
+      console.warn(`Could not read broll-prompts.md: ${error}`);
+    }
+    
+    // Fallback: build a simple prompt from available data
+    const broll = scene.broll_image_brief;
+    const chars = scene.characters_present.slice(0, 2); // Max 2 for diffusion
+    
+    const charNames: string[] = [];
+    for (const charId of chars) {
+      const char = context.characters?.characters.find(c => c.id === charId);
+      if (char) {
+        charNames.push(`${char.name}, ${char.visual_bible.age_range}`);
+      }
+    }
+    
+    const location = context.locations?.locations.find(l => l.id === scene.setting.loc_id);
+    const locationName = location ? location.name : scene.setting.loc_id;
+    
+    const parts = [
+      charNames.join(' and '),
+      broll.activity_suggestion || 'interacting',
+      `at ${locationName}`,
+      broll.framing?.replace(/_/g, ' ') || 'medium shot',
+      `${scene.setting.time} ${scene.setting.weather}`.trim() || 'day clear',
+      'candid, amateur'
+    ].filter(Boolean);
+    
+    return parts.join(', ');
   }
 
   async generateBrollImages(context: GenerationContext, outputDir: string): Promise<void> {
@@ -263,7 +411,7 @@ Scene Context:
       console.log(`\n📺 Generating images for Episode ${scenePlan.episode_no}...`);
       
       for (const scene of scenePlan.scenes) {
-        const imagePath = await this.generateSceneImage(scene, context, scenePlan.episode_no);
+        const imagePath = await this.generateSceneImage(scene, context, scenePlan.episode_no, outputDir);
         
         if (imagePath) {
           totalGenerated++;

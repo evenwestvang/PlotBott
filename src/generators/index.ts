@@ -404,6 +404,52 @@ export class StoryGenerator {
       broll.time_offset = 'pre_scene';
     }
     
+    // Validate and fix framing to valid enum value
+    const validFraming = ['candid_moment', 'caught_between', 'direct_address', 'environmental_portrait', 'observational', 'intimate_distance', 'contextual_wide', 'reaction_capture', 'transitional_beat'];
+    if (!validFraming.includes(broll.framing as string)) {
+      broll.framing = 'candid_moment' as any;
+    }
+    
+    // Ensure subject_recasts match subject_ids and fix visible_in_frame values
+    if (broll.subject_recasts) {
+      // Fix visible_in_frame enum values
+      const validVisibleInFrame = ['face', 'upper_body', 'hands', 'full_body', 'silhouette'];
+      
+      for (const recast of broll.subject_recasts) {
+        if (recast.visible_in_frame) {
+          // Fix common invalid values
+          recast.visible_in_frame = recast.visible_in_frame.map(value => {
+            const strValue = String(value).toLowerCase();
+            if (strValue.includes('profile')) return 'face';
+            if (strValue.includes('full_face')) return 'face';
+            if (strValue.includes('head')) return 'face';
+            if (strValue.includes('torso') || strValue.includes('chest')) return 'upper_body';
+            if (strValue.includes('body')) return 'upper_body';
+            if (!validVisibleInFrame.includes(strValue)) return 'face';
+            return strValue as any;
+          });
+          
+          // Remove duplicates
+          recast.visible_in_frame = [...new Set(recast.visible_in_frame)];
+          
+          // Ensure at least one valid value
+          if (recast.visible_in_frame.length === 0) {
+            recast.visible_in_frame = ['face', 'upper_body'];
+          }
+        } else {
+          recast.visible_in_frame = ['face', 'upper_body'];
+        }
+        
+        // Ensure required fields have defaults
+        if (!recast.ethnicity) recast.ethnicity = 'Mixed';
+        if (!recast.skin_tone) recast.skin_tone = 'medium';
+        if (!recast.eye_color) recast.eye_color = 'brown';
+        if (!recast.expression_state) recast.expression_state = 'neutral focus';
+        if (!recast.frame_specific_traits) recast.frame_specific_traits = ['attentive expression', 'natural posture'];
+        if (!recast.frame_clothing_details) recast.frame_clothing_details = [];
+      }
+    }
+    
     // Validation of frame-specific traits is handled in schema (max 5)
   }
   

@@ -4,7 +4,7 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-COMFYUI_DIR="$PROJECT_ROOT/../ComfyUI"
+COMFYUI_DIR="$PROJECT_ROOT/bin/ComfyUI"
 
 if [ ! -d "$COMFYUI_DIR" ]; then
     echo "❌ ComfyUI not found at $COMFYUI_DIR"
