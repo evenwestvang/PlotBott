@@ -29,11 +29,13 @@ program
         process.exit(1);
       }
 
-      // Auto-generate output directory if not specified
-      const outputDir = options.output || generateOutputDir(options.concept);
+      // Auto-generate output directory if not specified, ensure it's never root
+      const outputDir = options.output 
+        ? ensureOutputDirectory(options.output)
+        : generateOutputDir(options.concept);
 
       const generator = new StoryGenerator();
-      const context = await generator.generateCompleteStory(options.concept, episodeCount);
+      const context = await generator.generateCompleteStory(options.concept, episodeCount, outputDir);
       
       await saveOutput(context, outputDir, {
         jsonOnly: options.jsonOnly,
@@ -89,54 +91,8 @@ async function saveOutput(
 ): Promise<void> {
   await fs.mkdir(outputDir, { recursive: true });
   
-  // Save individual JSON files
-  const files = [
-    ['universe.json', context.universe],
-    ['controlling-idea.json', context.controllingIdea],
-    ['factions.json', context.factions],
-    ['characters.json', context.characters],
-    ['locations.json', context.locations],
-    ['conflicts.json', context.conflicts],
-    ['season-arc.json', context.seasonArc],
-  ];
-  
-  for (const [filename, data] of files) {
-    if (data) {
-      await fs.writeFile(
-        join(outputDir, filename as string),
-        JSON.stringify(data, null, 2),
-        'utf8'
-      );
-    }
-  }
-  
-  // Save episodes
-  if (context.episodes) {
-    const episodesDir = join(outputDir, 'episodes');
-    await fs.mkdir(episodesDir, { recursive: true });
-    
-    for (const episode of context.episodes) {
-      await fs.writeFile(
-        join(episodesDir, `episode-${episode.episode_no}.json`),
-        JSON.stringify(episode, null, 2),
-        'utf8'
-      );
-    }
-  }
-  
-  // Save scenes
-  if (context.scenes) {
-    const scenesDir = join(outputDir, 'scenes');
-    await fs.mkdir(scenesDir, { recursive: true });
-    
-    for (const scenePlan of context.scenes) {
-      await fs.writeFile(
-        join(scenesDir, `scenes-episode-${scenePlan.episode_no}.json`),
-        JSON.stringify(scenePlan, null, 2),
-        'utf8'
-      );
-    }
-  }
+  // Individual JSON files, episodes, and scenes are already written during streaming generation
+  // Only save complete context and non-JSON files here
   
   // Save complete context
   await fs.writeFile(
@@ -159,6 +115,16 @@ async function saveOutput(
   
   // Generate HTML treatment
   await generateHTMLTreatment(context, outputDir);
+  
+  // Save performance report
+  if (options.generator) {
+    const performanceReport = options.generator.getPerformanceReport();
+    await fs.writeFile(
+      join(outputDir, 'performance-report.txt'),
+      performanceReport,
+      'utf8'
+    );
+  }
 }
 
 async function generateSummary(context: GenerationContext, outputDir: string): Promise<void> {
@@ -633,7 +599,7 @@ async function generateHTMLTreatment(context: GenerationContext, outputDir: stri
         <ul>`);
       
       // Only Acts 1 and 2 have "promise of the premise"
-      if (act.promise_of_the_premise) {
+      if (act.promise_of_the_premise && act.promise_of_the_premise !== 'undefined') {
         html.push(`            <li><strong>Promise:</strong> ${act.promise_of_the_premise}</li>`);
       }
       
@@ -838,7 +804,21 @@ function generateOutputDir(concept: string): string {
     .replace(/^-+|-+$/g, '');      // Trim leading/trailing hyphens
   
   const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-  return `./output/${slug}-${timestamp}`;
+  return `./output/${timestamp}-${slug}`;
+}
+
+function ensureOutputDirectory(userOutputDir?: string): string {
+  // Always default to ./output if no directory specified or if it would write to root
+  if (!userOutputDir || userOutputDir === '.' || userOutputDir === './') {
+    return './output';
+  }
+  
+  // If user specified a directory, ensure it's not root and prefix with ./output if needed
+  if (!userOutputDir.startsWith('./') && !userOutputDir.startsWith('/')) {
+    return `./output/${userOutputDir}`;
+  }
+  
+  return userOutputDir;
 }
 
 // Run the CLI

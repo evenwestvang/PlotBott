@@ -11,12 +11,18 @@ import type {
   GenerationContext, BrollImageBrief, SceneUnit
 } from '../types/index.js';
 
+
 export class StoryGenerator {
   private claude: ClaudeClient;
   
   constructor() {
     this.claude = new ClaudeClient();
   }
+  
+  public getPerformanceReport(): string {
+    return this.claude.getPerformanceReport();
+  }
+  
   
   async generateUniverse(concept?: string): Promise<Universe> {
     const prompt = concept 
@@ -28,6 +34,11 @@ export class StoryGenerator {
     // Generate universe_id if not provided
     if (!result.universe_id) {
       result.universe_id = generateId(result.title || 'universe');
+    }
+    
+    // Add the original concept to the universe for downstream use
+    if (concept) {
+      (result as any).original_concept = concept;
     }
     
     return validateSchema<Universe>('Universe', result);
@@ -69,92 +80,131 @@ export class StoryGenerator {
     controllingIdea: ControllingIdea, 
     factions: FactionsBundle
   ): Promise<CharacterRoster> {
-    const result = await this.claude.generateWithRetry<CharacterRoster>(
-      CHARACTERS_PROMPT,
-      { universe, controllingIdea, factions },
-      3,
-      6000 // Increased token limit for detailed character generation
-    );
+    let enhancedPrompt = CHARACTERS_PROMPT;
     
-    result.universe_id = universe.universe_id;
-    
-    // Ensure minimum character count
-    if (result.characters.length < 4) {
-      throw new Error(`Generated only ${result.characters.length} characters, need at least 4. Please retry generation.`);
+    // Add original concept context if available
+    if ((universe as any).original_concept) {
+      enhancedPrompt += `\n\nORIGINAL CONCEPT CONTEXT:\n"${(universe as any).original_concept}"\n\nPay special attention to any named characters, relationships, or specific roles mentioned in the concept above.`;
     }
     
-    // Generate character IDs and seeds
-    for (const character of result.characters) {
-      if (!character.id) {
-        character.id = generateId(character.name);
-      }
-      
-      // Generate deterministic seed for consistent character visuals
-      if (!character.diffusion_control || !character.diffusion_control.seed) {
-        if (!character.diffusion_control) {
-          character.diffusion_control = {
-            prompt_core: '',
-            negative_prompt: '',
-            seed: 0,
-            aspect_ratio: '1:1',
-            consistency_tags: []
-          };
+    // Retry character generation with validation
+    let lastError: Error | null = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const result = await this.claude.generateWithRetry<CharacterRoster>(
+          enhancedPrompt,
+          { universe, controllingIdea, factions },
+          1, // Single attempt per validation attempt
+          6000 // Increased token limit for detailed character generation
+        );
+        
+        result.universe_id = universe.universe_id;
+        
+        // Validate result structure
+        if (!result.characters || !Array.isArray(result.characters)) {
+          throw new Error('Generated characters is not a valid array.');
         }
-        character.diffusion_control.seed = hashSeed(universe.universe_id, character.id);
-      }
-      
-      // Fix consistency_tags if it's a string
-      if (character.diffusion_control) {
-        const dc = character.diffusion_control as any;
-        if (typeof dc.consistency_tags === 'string') {
-          dc.consistency_tags = dc.consistency_tags.split(',').map((tag: string) => tag.trim());
+        
+        // Ensure minimum character count
+        if (result.characters.length < 4) {
+          throw new Error(`Generated only ${result.characters.length} characters, need at least 4.`);
         }
-      }
-      
-      // Fix relationship types to valid enum values
-      for (const rel of character.relationships || []) {
-        const validTypes = ['ally', 'rival', 'mentor', 'love', 'family', 'betrayer', 'confidante'];
-        if (!validTypes.includes(rel.type)) {
-          // Map common invalid types to valid ones
-          if (rel.type.includes('mentor')) rel.type = 'mentor';
-          else if (rel.type.includes('ally')) rel.type = 'ally';
-          else if (rel.type.includes('confidante')) rel.type = 'confidante';
-          else if (rel.type.includes('rival') || rel.type.includes('adversary')) rel.type = 'rival';
-          else rel.type = 'rival'; // default fallback
+        
+        // Generate character IDs and seeds
+        for (const character of result.characters) {
+          if (!character.id) {
+            character.id = generateId(character.name);
+          }
+          
+          // Generate deterministic seed for consistent character visuals
+          if (!character.diffusion_control || !character.diffusion_control.seed) {
+            if (!character.diffusion_control) {
+              character.diffusion_control = {
+                prompt_core: '',
+                negative_prompt: '',
+                seed: 0,
+                aspect_ratio: '1:1',
+                consistency_tags: []
+              };
+            }
+            character.diffusion_control.seed = hashSeed(universe.universe_id, character.id);
+          }
+          
+          // Fix consistency_tags if it's a string
+          if (character.diffusion_control) {
+            const dc = character.diffusion_control as any;
+            if (typeof dc.consistency_tags === 'string') {
+              dc.consistency_tags = dc.consistency_tags.split(',').map((tag: string) => tag.trim());
+            }
+          }
+          
+          // Fix relationship types to valid enum values
+          for (const rel of character.relationships || []) {
+            const validTypes = ['ally', 'rival', 'mentor', 'love', 'family', 'betrayer', 'confidante'];
+            if (!validTypes.includes(rel.type)) {
+              // Map common invalid types to valid ones
+              if (rel.type.includes('mentor')) rel.type = 'mentor';
+              else if (rel.type.includes('ally')) rel.type = 'ally';
+              else if (rel.type.includes('confidante')) rel.type = 'confidante';
+              else if (rel.type.includes('rival') || rel.type.includes('adversary')) rel.type = 'rival';
+              else rel.type = 'rival'; // default fallback
+            }
+          }
+          
+          // Fix visual_bible fields that should be arrays
+          if (character.visual_bible) {
+            const vb = character.visual_bible as any;
+            // Convert string fields to arrays by splitting on commas
+            if (typeof vb.apparel_core === 'string') {
+              vb.apparel_core = vb.apparel_core.split(',').map((item: string) => item.trim());
+            }
+            if (typeof vb.props === 'string') {
+              vb.props = vb.props.split(',').map((item: string) => item.trim());
+            }
+            if (typeof vb.palette === 'string') {
+              vb.palette = vb.palette.split(',').map((item: string) => item.trim());
+            }
+            if (typeof vb.surface_textures === 'string') {
+              vb.surface_textures = vb.surface_textures.split(',').map((item: string) => item.trim());
+            }
+            if (typeof vb.style_notes === 'string') {
+              vb.style_notes = vb.style_notes.split(',').map((item: string) => item.trim());
+            }
+            if (typeof vb.negatives === 'string') {
+              vb.negatives = vb.negatives.split(',').map((item: string) => item.trim());
+            }
+          }
         }
-      }
-      
-      // Fix visual_bible fields that should be arrays
-      if (character.visual_bible) {
-        const vb = character.visual_bible as any;
-        // Convert string fields to arrays by splitting on commas
-        if (typeof vb.apparel_core === 'string') {
-          vb.apparel_core = vb.apparel_core.split(',').map((item: string) => item.trim());
+        
+        // Try validation - if it fails, we'll retry
+        return validateSchema<CharacterRoster>('CharacterRoster', result);
+        
+      } catch (error) {
+        lastError = error as Error;
+        console.warn(`Character generation attempt ${attempt} failed:`, error);
+        
+        if (attempt === 3) {
+          break;
         }
-        if (typeof vb.props === 'string') {
-          vb.props = vb.props.split(',').map((item: string) => item.trim());
-        }
-        if (typeof vb.palette === 'string') {
-          vb.palette = vb.palette.split(',').map((item: string) => item.trim());
-        }
-        if (typeof vb.surface_textures === 'string') {
-          vb.surface_textures = vb.surface_textures.split(',').map((item: string) => item.trim());
-        }
-        if (typeof vb.style_notes === 'string') {
-          vb.style_notes = vb.style_notes.split(',').map((item: string) => item.trim());
-        }
-        if (typeof vb.negatives === 'string') {
-          vb.negatives = vb.negatives.split(',').map((item: string) => item.trim());
-        }
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
     }
     
-    return validateSchema<CharacterRoster>('CharacterRoster', result);
+    throw lastError || new Error('Character generation failed after 3 attempts');
   }
   
   async generateLocations(universe: Universe): Promise<LocationsBundle> {
+    let enhancedPrompt = LOCATIONS_PROMPT;
+    
+    // Add original concept context if available
+    if ((universe as any).original_concept) {
+      enhancedPrompt += `\n\nORIGINAL CONCEPT CONTEXT:\n"${(universe as any).original_concept}"\n\nPay special attention to any specific locations, settings, or time period mentioned in the concept above.`;
+    }
+    
     const result = await this.claude.generateWithRetry<LocationsBundle>(
-      LOCATIONS_PROMPT,
+      enhancedPrompt,
       universe
     );
     
@@ -229,6 +279,14 @@ export class StoryGenerator {
     );
     
     result.universe_id = conflicts.universe_id;
+    
+    // Fix Act 3 - should not have promise_of_the_premise field
+    for (const act of result.act_structure) {
+      if (act.act === 3 && (act as any).promise_of_the_premise !== undefined) {
+        delete (act as any).promise_of_the_premise;
+      }
+    }
+    
     return validateSchema<SeasonArc>('SeasonArc', result);
   }
   
@@ -481,30 +539,80 @@ export class StoryGenerator {
     return emotionMap[shiftKey] || null;
   }
   
+  private async writeFile(outputDir: string, filename: string, data: any): Promise<void> {
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    
+    await fs.writeFile(
+      path.join(outputDir, filename),
+      JSON.stringify(data, null, 2),
+      'utf8'
+    );
+    console.log(`📄 Wrote ${filename}`);
+  }
+  
   async generateCompleteStory(
     concept: string,
-    episodeCount: number = 6
+    episodeCount: number = 6,
+    outputDir?: string
   ): Promise<GenerationContext> {
+    // Concept will be included in the universe and passed to all subsequent generations
+    
+    // Create output directory if provided for streaming
+    if (outputDir) {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      await fs.mkdir(outputDir, { recursive: true });
+      await fs.mkdir(path.join(outputDir, 'episodes'), { recursive: true });
+      await fs.mkdir(path.join(outputDir, 'scenes'), { recursive: true });
+    }
+    
     console.log('🌍 Generating Universe...');
     const universe = await this.generateUniverse(concept);
+    if (outputDir) await this.writeFile(outputDir, 'universe.json', universe);
     
     console.log('💭 Generating Controlling Idea...');  
     const controllingIdea = await this.generateControllingIdea(universe);
+    if (outputDir) await this.writeFile(outputDir, 'controlling-idea.json', controllingIdea);
     
     console.log('🏛️ Generating Factions...');
     const factions = await this.generateFactions(universe, controllingIdea);
+    if (outputDir) await this.writeFile(outputDir, 'factions.json', factions);
     
     console.log('👥 Generating Characters...');
     const characters = await this.generateCharacters(universe, controllingIdea, factions);
+    if (outputDir) await this.writeFile(outputDir, 'characters.json', characters);
+    
+    // Update factions with key_figures now that we have characters
+    if (outputDir) {
+      console.log('🔗 Updating faction key figures...');
+      // Populate key_figures based on character faction_affiliations
+      for (const faction of factions.factions) {
+        faction.key_figures = characters.characters
+          .filter(char => char.faction_affiliations.includes(faction.id))
+          .map(char => char.id);
+      }
+      await this.writeFile(outputDir, 'factions.json', factions);
+    }
     
     console.log('🏗️ Generating Locations...');
     const locations = await this.generateLocations(universe);
+    if (outputDir) await this.writeFile(outputDir, 'locations.json', locations);
+    
+    // Update universe catalogs now that we have factions and locations  
+    if (outputDir) {
+      console.log('🔗 Updating universe catalogs...');
+      // These should already be populated by the generate methods, but ensure streaming gets updates
+      await this.writeFile(outputDir, 'universe.json', universe);
+    }
     
     console.log('⚔️ Generating Conflict Matrix...');
     const conflicts = await this.generateConflictMatrix(characters, factions, controllingIdea);
+    if (outputDir) await this.writeFile(outputDir, 'conflicts.json', conflicts);
     
     console.log('📚 Generating Season Arc...');
     const seasonArc = await this.generateSeasonArc(conflicts, controllingIdea);
+    if (outputDir) await this.writeFile(outputDir, 'season-arc.json', seasonArc);
     
     // Update episode count and ensure proper act distribution
     if (episodeCount !== seasonArc.episode_count) {
@@ -557,10 +665,12 @@ export class StoryGenerator {
       console.log(`📺 Generating Episode ${ep}...`);
       const episode = await this.generateEpisodePlan(seasonArc, conflicts, locations, characters, ep);
       episodes.push(episode);
+      if (outputDir) await this.writeFile(outputDir, `episodes/episode-${ep}.json`, episode);
       
       console.log(`🎬 Generating Scenes for Episode ${ep}...`);
       const scenePlan = await this.generateScenePlan(episode, locations, characters);
       scenes.push(scenePlan);
+      if (outputDir) await this.writeFile(outputDir, `scenes/scenes-episode-${ep}.json`, scenePlan);
     }
     
     const context: GenerationContext = {
@@ -579,6 +689,10 @@ export class StoryGenerator {
     validateReferentialIntegrity(context);
     
     console.log('🎉 Story generation complete!');
+    
+    // Output performance report
+    console.log(this.claude.getPerformanceReport());
+    
     return context;
   }
 }

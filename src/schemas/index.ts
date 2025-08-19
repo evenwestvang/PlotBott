@@ -30,6 +30,7 @@ export const STORYWORLD_SCHEMA = {
       "additionalProperties": false,
       "required": ["universe_id", "title", "genre", "tone", "world_rules", "value_spectrums", "motifs_symbols", "lexicon", "locations_catalog", "factions_catalog"],
       "properties": {
+        "original_concept": { "type": "string" },
         "universe_id": { "$ref": "#/definitions/IdSlug" },
         "title": { "type": "string", "minLength": 1 },
         "genre": { "type": "array", "items": { "type": "string" }, "minItems": 1 },

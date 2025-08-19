@@ -114,20 +114,65 @@ export const CHARACTERS_PROMPT = `
 Role: Casting + Psychology.
 Task: Create 4-8 characters with wants vs needs, flaws, relationships, and modular visual designs.
 
-CRITICAL: Output must be valid JSON. Each character needs ALL required fields:
+CRITICAL: Output must be valid JSON matching this exact structure:
 
-- id, name, role_archetype, public_mask, private_truth, wants, needs
-- skills_strengths, flaws_contradictions (arrays)
-- relationships (array with other_id, type, tension_axis, current_value)
-- faction_affiliations (array of faction IDs)
-- position_on_axes (object with axis_id: number pairs)
-- visual_bible (object with age_range, body_outline, face_keypoints, hair, apparel_core, props, palette, surface_textures, iconic_silhouette, style_notes, negatives)
-- diffusion_control (object with prompt_core, negative_prompt, seed, aspect_ratio, consistency_tags)
+{
+  "universe_id": "same_as_input_universe_id",
+  "characters": [
+    {
+      "id": "char_id_1",
+      "name": "Character Name",
+      "role_archetype": "protagonist",
+      "public_mask": "How they present themselves",
+      "private_truth": "What they hide",
+      "wants": "What they consciously pursue",
+      "needs": "What they actually require for growth",
+      "skills_strengths": ["skill 1", "skill 2"],
+      "flaws_contradictions": ["flaw 1", "flaw 2"],
+      "relationships": [
+        {
+          "other_id": "char_id_2",
+          "type": "ally",
+          "tension_axis": "axis_id_1",
+          "current_value": 0.5
+        }
+      ],
+      "faction_affiliations": ["faction_id_1"],
+      "position_on_axes": {
+        "axis_id_1": 0.7,
+        "axis_id_2": -0.3
+      },
+      "visual_bible": {
+        "age_range": "20s-30s",
+        "body_outline": "physical description",
+        "face_keypoints": "facial features",
+        "hair": "hair description",
+        "apparel_core": ["clothing item 1", "clothing item 2"],
+        "props": ["prop 1", "prop 2"],
+        "palette": ["color 1", "color 2"],
+        "surface_textures": ["texture 1", "texture 2"],
+        "iconic_silhouette": "distinctive silhouette",
+        "style_notes": ["style note 1", "style note 2"],
+        "negatives": ["avoid this", "avoid that"]
+      },
+      "diffusion_control": {
+        "prompt_core": "core visual prompt",
+        "negative_prompt": "what to avoid",
+        "seed": 0,
+        "aspect_ratio": "1:1",
+        "consistency_tags": ["tag1", "tag2"]
+      }
+    }
+  ]
+}
 
 Requirements:
+- Character IDs must be lowercase with underscores (e.g., "annie_williams", "marcus_chen")
 - Build cross-character relationships with tension on value axes
 - Visual descriptions should be modular for scene-specific recasting
 - role_archetype must be: protagonist, antagonist, ally, foil, mentor, trickster, or confidante
+- relationship type must be: ally, rival, mentor, love, family, betrayer, or confidante
+- All array fields must be arrays, all object fields must be objects
 
 Output: Valid CharacterRoster JSON only. No additional text or explanation.
 `;
