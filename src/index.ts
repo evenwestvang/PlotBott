@@ -630,8 +630,12 @@ async function generateHTMLTreatment(context: GenerationContext, outputDir: stri
     
     for (const act of context.seasonArc.act_structure) {
       html.push(`        <p><strong>ACT ${act.act}</strong></p>
-        <ul>
-            <li><strong>Promise:</strong> ${act.promise_of_the_premise}</li>`);
+        <ul>`);
+      
+      // Only Acts 1 and 2 have "promise of the premise"
+      if (act.promise_of_the_premise) {
+        html.push(`            <li><strong>Promise:</strong> ${act.promise_of_the_premise}</li>`);
+      }
       
       if (act.turning_point) {
         html.push(`            <li><strong>Turning Point:</strong> ${act.turning_point.event}</li>
