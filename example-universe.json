@@ -1,0 +1,67 @@
+{
+  "universe_id": "emotion_market_collective",
+  "title": "The Emotional Vintners",
+  "genre": [
+    "social science fiction",
+    "psychological drama",
+    "noir"
+  ],
+  "tone": [
+    "melancholic",
+    "contemplative",
+    "intimate"
+  ],
+  "world_rules": {
+    "tech": [
+      "Emotions can be extracted and stored in glass vessels",
+      "Extracted emotions maintain potency for exactly one lunar cycle",
+      "Each emotion has distinct visual properties when bottled",
+      "Multiple emotions cannot be mixed without neutralizing both"
+    ],
+    "constraints": [
+      "Only genuine emotions can be bottled, artificial feelings dissolve",
+      "Extracting emotions leaves the donor temporarily hollow",
+      "Consuming bottled emotions creates dependency over time",
+      "Children cannot produce harvestable emotions"
+    ],
+    "magic_or_meta": null
+  },
+  "value_spectrums": [
+    {
+      "axis": "authenticity_vs_comfort",
+      "definition": "Living with natural emotional pain vs seeking artificial emotional relief"
+    },
+    {
+      "axis": "profit_vs_ethics",
+      "definition": "Monetizing human feelings vs preserving emotional sanctity"
+    },
+    {
+      "axis": "individual_vs_collective",
+      "definition": "Personal emotional sovereignty vs sharing emotional burden"
+    }
+  ],
+  "motifs_symbols": [
+    "Glass bottles and vials",
+    "Color-shifting liquids",
+    "Moths drawn to emotional light",
+    "Empty vessels",
+    "Mirrors and reflections"
+  ],
+  "lexicon": {
+    "slang": [
+      "emotional vintage",
+      "hollow-eyes",
+      "spirit-sick",
+      "joy-junkie",
+      "grief-merchant"
+    ],
+    "gestures": [
+      "Touching throat when speaking of emotions",
+      "Covering heart when refusing extraction",
+      "Tilting empty bottle to indicate emotional bankruptcy"
+    ]
+  },
+  "locations_catalog": [],
+  "factions_catalog": [],
+  "notes": "Focus on personal stories that highlight the moral complexity of emotional commerce and addiction"
+}
