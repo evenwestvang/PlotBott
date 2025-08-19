@@ -1,4 +1,4 @@
-# PlotBoot
+# PlotBott
 
 A story generation pipeline that creates complete dramatic narratives from universe to scenes, including b-roll image briefs optimized for diffusion models.
 
