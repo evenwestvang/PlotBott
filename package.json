@@ -1,7 +1,7 @@
 {
-  "name": "mckee-story-generator",
+  "name": "plotbott",
   "version": "1.0.0",
-  "description": "McKee-native story generation pipeline with b-roll image briefs",
+  "description": "AI-powered story generation with comprehensive narrative structure",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {

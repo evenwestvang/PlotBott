@@ -188,7 +188,11 @@ export function validateReferentialIntegrity(context: GenerationContext): void {
 }
 
 export function generateId(prefix: string, suffix?: string): string {
-  const base = prefix.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  const base = prefix.toLowerCase()
+    .replace(/[^a-z0-9]/g, '_')
+    .replace(/_+/g, '_')  // Replace multiple underscores with single
+    .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
+  
   const id = suffix ? `${base}_${suffix}` : base;
   return id.slice(0, 64); // Ensure max length
 }

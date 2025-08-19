@@ -1,16 +1,17 @@
-# McKee Story Generator
+# PlotBott
 
-A production-ready, McKee-native story generation pipeline that creates complete dramatic narratives from universe to scenes, including b-roll image briefs optimized for diffusion models.
+AI-powered story generation with comprehensive narrative structure. Creates complete dramatic narratives from universe to scenes, including b-roll image briefs optimized for diffusion models.
 
 ## Features
 
-- **McKee-Native Structure**: Follows Robert McKee's dramatic principles throughout the entire generation process
-- **8-Step Generation Pipeline**: Universe → Controlling Idea → Factions → Characters → Locations → Conflicts → Season Arc → Episodes → Scenes  
-- **B-roll Image Briefs**: Scene-specific diffusion prompts with strict constraints (max 2 subjects, "candid, amateur" keywords only)
-- **Character Recasting**: Scene-specific character visual traits (1-3 minimal traits) to avoid "catalog poses"
-- **Referential Integrity**: Full validation of ID references across all story elements
-- **JSON Schema Validation**: Strict schema enforcement with AJV validation
-- **Deterministic Generation**: Consistent output with proper seed management
+- **🎭 Dramatic Structure**: Follows Robert McKee's storytelling principles throughout the entire generation process
+- **🔄 8-Step Pipeline**: Universe → Controlling Idea → Factions → Characters → Locations → Conflicts → Season Arc → Episodes → Scenes  
+- **🎬 B-roll Image Briefs**: Scene-specific diffusion prompts with strict constraints (max 2 subjects, "candid, amateur" keywords only)
+- **🎯 Character Recasting**: Scene-specific character visual traits (1-3 minimal traits) to avoid "catalog poses"
+- **🔗 Cross-Reference Integrity**: Full validation of ID references across all story elements with streaming output
+- **📊 Performance Tracking**: Comprehensive API call analytics and token usage monitoring
+- **⚡ Streaming Output**: Files written as generated for real-time progress feedback
+- **🛡️ Schema Validation**: Strict JSON schema enforcement with AJV validation
 
 ## Installation
 
@@ -24,36 +25,38 @@ npm run build
 ### Generate a Complete Story
 
 ```bash
-npm run dev generate --concept "A world where memories can be traded like currency"
+npm run dev generate "A world where memories can be traded like currency"
 ```
 
 Options:
-- `-c, --concept <concept>`: Core story concept (default: "A world where trust is currency")
-- `-e, --episodes <number>`: Number of episodes to generate (default: 3)
-- `-o, --output <directory>`: Output directory (default: ./output)
+- `[concept]`: Core story concept (default: "A world where trust is currency")
+- `-e, --episodes <number>`: Number of episodes to generate (default: 6)
+- `-o, --output <directory>`: Output directory (auto-generated if not specified)
 - `--json-only`: Only output raw JSON files
 - `--no-broll-prompts`: Skip generating b-roll diffusion prompts
 
 ### Example Output Structure
 
 ```
-output/
+output/2024-12-20-memories-currency/
 ├── complete-story.json          # Full generation context
-├── universe.json               # World rules and value spectrums
+├── universe.json               # World rules and value spectrums (updated with catalogs)
 ├── controlling-idea.json       # Theme and dramatic thesis
-├── factions.json              # Opposing systems
+├── factions.json              # Opposing systems (updated with key_figures)
 ├── characters.json            # Character roster with visual bibles
 ├── locations.json             # Locations with blocking affordances
 ├── conflicts.json             # Conflict matrix and escalation
 ├── season-arc.json            # Macro story structure
 ├── episodes/
 │   ├── episode-1.json         # Per-episode plans
-│   └── episode-2.json
+│   └── episode-6.json
 ├── scenes/
 │   ├── scenes-episode-1.json  # Scene breakdowns with b-roll
-│   └── scenes-episode-2.json
+│   └── scenes-episode-6.json
 ├── story-summary.md           # Human-readable summary
-└── broll-prompts.md           # Diffusion-ready image prompts
+├── treatment.html             # Professional HTML treatment
+├── broll-prompts.md           # Diffusion-ready image prompts
+└── performance-report.txt     # API usage analytics
 ```
 
 ### Validate Existing Story Files

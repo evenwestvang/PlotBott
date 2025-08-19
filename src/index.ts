@@ -9,19 +9,19 @@ import type { GenerationContext } from './types/index.js';
 const program = new Command();
 
 program
-  .name('mckee-story-generator')
-  .description('McKee-native story generation pipeline with b-roll image briefs')
+  .name('plotbott')
+  .description('AI-powered story generation with comprehensive narrative structure')
   .version('1.0.0');
 
 program
   .command('generate')
   .description('Generate a complete story from concept to scenes')
-  .option('-c, --concept <concept>', 'Core story concept', 'A world where trust is currency')
+  .argument('[concept]', 'Core story concept', 'A world where trust is currency')
   .option('-e, --episodes <number>', 'Number of episodes to generate', '6')
   .option('-o, --output <directory>', 'Output directory (auto-generated if not specified)')
   .option('--json-only', 'Only output raw JSON files')
   .option('--no-broll-prompts', 'Skip generating b-roll diffusion prompts')
-  .action(async (options) => {
+  .action(async (concept, options) => {
     try {
       const episodeCount = parseInt(options.episodes, 10);
       if (isNaN(episodeCount) || episodeCount < 1) {
@@ -32,10 +32,10 @@ program
       // Auto-generate output directory if not specified, ensure it's never root
       const outputDir = options.output 
         ? ensureOutputDirectory(options.output)
-        : generateOutputDir(options.concept);
+        : generateOutputDir(concept);
 
       const generator = new StoryGenerator();
-      const context = await generator.generateCompleteStory(options.concept, episodeCount, outputDir);
+      const context = await generator.generateCompleteStory(concept, episodeCount, outputDir);
       
       await saveOutput(context, outputDir, {
         jsonOnly: options.jsonOnly,
