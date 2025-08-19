@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { StoryGenerator } from './generators/index.js';
+import { ComfyUIGenerator } from './image-gen/comfyui-generator.js';
 import type { GenerationContext } from './types/index.js';
 
 const program = new Command();
@@ -21,6 +22,9 @@ program
   .option('-o, --output <directory>', 'Output directory (auto-generated if not specified)')
   .option('--json-only', 'Only output raw JSON files')
   .option('--no-broll-prompts', 'Skip generating b-roll diffusion prompts')
+  .option('--no-images', 'Skip generating b-roll images with ComfyUI')
+  .option('--comfyui-server <url>', 'ComfyUI server URL', 'http://127.0.0.1:8188')
+  .option('--comfyui-workflow <path>', 'Path to ComfyUI workflow JSON file')
   .action(async (concept, options) => {
     try {
       const episodeCount = parseInt(options.episodes, 10);
@@ -42,6 +46,23 @@ program
         includeBrollPrompts: !options.noBrollPrompts,
         generator
       });
+      
+      // Generate images if requested
+      if (!options.noImages && !options.jsonOnly) {
+        console.log('\n🎨 Starting b-roll image generation...');
+        const comfyGenerator = new ComfyUIGenerator(
+          options.comfyuiServer,
+          options.comfyuiWorkflow
+        );
+        
+        const initialized = await comfyGenerator.initialize();
+        if (initialized) {
+          await comfyGenerator.generateBrollImages(context, outputDir);
+        } else {
+          console.log('⚠️ ComfyUI not available - skipping image generation');
+          console.log('   To generate images, start ComfyUI server and run with --no-images flag disabled');
+        }
+      }
       
       console.log(`\n🎬 Story generation complete! Output saved to: ${outputDir}`);
       
@@ -76,6 +97,40 @@ program
       console.log(`🎨 B-roll prompts extracted to: ${options.output}`);
     } catch (error) {
       console.error('❌ Extraction failed:', error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('generate-images')
+  .description('Generate b-roll images from existing story files using ComfyUI')
+  .argument('<directory>', 'Directory containing story JSON files (complete-story.json)')
+  .option('--comfyui-server <url>', 'ComfyUI server URL', 'http://127.0.0.1:8188')
+  .option('--comfyui-workflow <path>', 'Path to ComfyUI workflow JSON file')
+  .action(async (directory, options) => {
+    try {
+      // Load existing story context
+      const contextPath = join(directory, 'complete-story.json');
+      const contextData = await fs.readFile(contextPath, 'utf8');
+      const context: GenerationContext = JSON.parse(contextData);
+      
+      console.log('🎨 Generating images from existing story data...');
+      const comfyGenerator = new ComfyUIGenerator(
+        options.comfyuiServer,
+        options.comfyuiWorkflow
+      );
+      
+      const initialized = await comfyGenerator.initialize();
+      if (initialized) {
+        await comfyGenerator.generateBrollImages(context, directory);
+        console.log('✅ Image generation complete!');
+      } else {
+        console.error('❌ ComfyUI server not available');
+        console.log('Make sure ComfyUI is running on', options.comfyuiServer);
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error('❌ Image generation failed:', error);
       process.exit(1);
     }
   });
@@ -738,10 +793,10 @@ async function generateHTMLTreatment(context: GenerationContext, outputDir: stri
         
         html.push(`        <div class="action"><strong>BUTTON:</strong> ${scene.button}</div>
         
-        <p><strong>CHARACTER RECASTS:</strong></p>
-        <ul>${scene.scene_character_recasts.map(recast => {
+        <p><strong>B-ROLL CHARACTER DETAILS:</strong></p>
+        <ul>${scene.broll_image_brief.subject_recasts.map(recast => {
           const char = context.characters?.characters.find(c => c.id === recast.char_id);
-          return `<li><strong>${char?.name || recast.char_id}:</strong> ${recast.minimal_visual_traits.join(', ')}</li>`;
+          return `<li><strong>${char?.name || recast.char_id}:</strong> ${recast.ethnicity}, ${recast.skin_tone}, ${recast.eye_color} - ${recast.frame_specific_traits.join(', ')}</li>`;
         }).join('')}</ul>`);
       }
     }

@@ -404,14 +404,7 @@ export class StoryGenerator {
       broll.time_offset = 'pre_scene';
     }
     
-    // Limit character recast traits to max 3
-    for (const recast of scene.scene_character_recasts) {
-      if (recast.minimal_visual_traits.length > 3) {
-        const excess = recast.minimal_visual_traits.slice(3);
-        recast.minimal_visual_traits = recast.minimal_visual_traits.slice(0, 3);
-        recast.avoid_list.push(...excess);
-      }
-    }
+    // Validation of frame-specific traits is handled in schema (max 5)
   }
   
   buildBrollPrompt(
@@ -420,55 +413,39 @@ export class StoryGenerator {
     locations: LocationsBundle
   ): string {
     const broll = scene.broll_image_brief;
-    
-    // Build character descriptions using visual bibles and scene recasts
     const charDescriptions: string[] = [];
-    for (const charId of broll.subject_ids) {
-      const char = characters.characters.find(c => c.id === charId);
-      const recast = scene.scene_character_recasts.find(r => r.char_id === charId);
+    
+    // Build character descriptions using frame-specific recasts
+    for (const recast of broll.subject_recasts) {
+      const char = characters.characters.find(c => c.id === recast.char_id);
       
       if (char) {
-        const parts = [char.name];
-        
-        // Add core visual bible elements
-        if (char.visual_bible.age_range) parts.push(char.visual_bible.age_range);
-        if (char.visual_bible.hair) parts.push(char.visual_bible.hair);
-        
-        // Add scene-specific recast traits (1-3 minimal traits)
-        if (recast && recast.minimal_visual_traits.length > 0) {
-          parts.push(...recast.minimal_visual_traits);
-        } else {
-          // Fallback to core apparel if no recast
-          if (char.visual_bible.apparel_core.length > 0) {
-            parts.push(char.visual_bible.apparel_core[0]);
-          }
-        }
+        const parts = [
+          char.name,
+          char.visual_bible.age_range,
+          recast.ethnicity,
+          recast.skin_tone,
+          recast.eye_color,
+          char.visual_bible.hair,
+          ...recast.frame_specific_traits,
+          ...recast.frame_clothing_details,
+          recast.expression_state
+        ].filter(Boolean);
         
         charDescriptions.push(parts.join(', '));
       } else {
-        charDescriptions.push(charId);
+        // Fallback if character not found
+        const parts = [
+          recast.char_id,
+          recast.ethnicity,
+          recast.skin_tone,
+          recast.eye_color,
+          ...recast.frame_specific_traits,
+          recast.expression_state
+        ].filter(Boolean);
+        
+        charDescriptions.push(parts.join(', '));
       }
-    }
-    
-    // Build location description using visual bible
-    const location = locations.locations.find(l => l.id === scene.setting.loc_id);
-    let locationDescription = scene.setting.loc_id;
-    
-    if (location) {
-      const locParts = [location.name];
-      
-      // Add iconic composition for visual continuity
-      if (location.iconic_composition) {
-        locParts.push(location.iconic_composition);
-      }
-      
-      // Add sensory palette elements for atmosphere (max 2)
-      if (location.sensory_palette.length > 0) {
-        const sensoryElements = location.sensory_palette.slice(0, 2);
-        locParts.push(...sensoryElements);
-      }
-      
-      locationDescription = locParts.join(', ');
     }
     
     // Build enhanced activity description from scene context
@@ -490,13 +467,24 @@ export class StoryGenerator {
       }
     }
     
+    // Build location description from frame-specific setting
+    const location = locations.locations.find(l => l.id === scene.setting.loc_id);
+    const baseLoc = location ? location.name : scene.setting.loc_id;
+    
+    const settingParts = [
+      baseLoc,
+      ...broll.frame_specific_setting.visible_objects,
+      ...broll.frame_specific_setting.atmospheric_elements,
+      ...broll.frame_specific_setting.composition_elements
+    ].filter(Boolean);
+    
     // Combine elements with proper diffusion formatting
     const parts = [
       charDescriptions.join(" and "),
       enhancedActivity,
-      `at ${locationDescription}`,
+      `at ${settingParts.join(', ')}`,
       broll.framing.replace(/_/g, ' '),
-      broll.setting_details,
+      broll.frame_specific_setting.lighting_quality,
       `${scene.setting.time} ${scene.setting.weather}`.trim(),
       broll.keywords.join(", ")
     ].filter(Boolean);

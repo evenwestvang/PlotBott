@@ -1,12 +1,13 @@
 # PlotBott
 
-A story generation pipeline that creates complete dramatic narratives from universe to scenes, including b-roll image briefs optimized for diffusion models.
+A story generation pipeline that creates complete dramatic narratives from universe to scenes, including b-roll image briefs optimized for diffusion models, with ComfyUI integration for automatic image generation.
 
 ## Features
 
 - **Dramatic Structure**: Follows Robert McKee's dramatic principles throughout the entire generation process
 - **8-Step Generation Pipeline**: Universe → Controlling Idea → Factions → Characters → Locations → Conflicts → Season Arc → Episodes → Scenes  
 - **B-roll Image Briefs**: Scene-specific diffusion prompts with strict constraints (max 2 subjects, "candid, amateur" keywords only)
+- **ComfyUI Integration**: Automatic b-roll image generation using locally running ComfyUI server
 - **Character Recasting**: Scene-specific character visual traits (1-3 minimal traits) to avoid "catalog poses"
 - **Referential Integrity**: Full validation of ID references across all story elements
 - **JSON Schema Validation**: Strict schema enforcement with AJV validation
@@ -24,15 +25,41 @@ npm run build
 ### Generate a Complete Story
 
 ```bash
-npm run dev generate --concept "A world where memories can be traded like currency"
+# Generate story with text and images (requires ComfyUI running)
+npm run generate "A world where memories can be traded like currency"
+
+# Generate story without images
+npm run generate "A world where memories can be traded like currency" --no-images
 ```
 
 Options:
-- `-c, --concept <concept>`: Core story concept (default: "A world where trust is currency")
-- `-e, --episodes <number>`: Number of episodes to generate (default: 3)
-- `-o, --output <directory>`: Output directory (default: ./output)
+- `-e, --episodes <number>`: Number of episodes to generate (default: 6)
+- `-o, --output <directory>`: Output directory (auto-generated if not specified)
 - `--json-only`: Only output raw JSON files
 - `--no-broll-prompts`: Skip generating b-roll diffusion prompts
+- `--no-images`: Skip generating b-roll images with ComfyUI
+- `--comfyui-server <url>`: ComfyUI server URL (default: http://127.0.0.1:8188)
+- `--comfyui-workflow <path>`: Path to ComfyUI workflow JSON file
+
+### Setup ComfyUI for Image Generation
+
+```bash
+# One-time setup
+npm run setup-comfyui
+
+# Start ComfyUI server (in separate terminal)
+npm run start-comfyui
+
+# Then generate with images
+npm run generate "Your story concept"
+```
+
+### Generate Images from Existing Story
+
+```bash
+# Generate images for already-created story
+npm run generate-images ./output/2025-08-19-your-story-folder
+```
 
 ### Example Output Structure
 
@@ -59,19 +86,24 @@ output/2025-08-19-a-world-where-trust-is-currency/
 ├── story-summary.md           # Human-readable summary
 ├── complete-treatment.html    # Professional HTML treatment
 ├── performance-report.txt     # API usage analytics
-└── broll-prompts.md           # Diffusion-ready image prompts
+├── broll-prompts.md           # Diffusion-ready image prompts
+└── images/                    # Generated b-roll images (if --no-images not used)
+    ├── episode-1-scene-1-timestamp.png
+    ├── episode-1-scene-1-timestamp.txt  # Image prompt metadata
+    ├── episode-1-scene-2-timestamp.png
+    └── ...
 ```
 
 ### Validate Existing Story Files
 
 ```bash
-npm run dev validate ./output
+npm run validate ./output/your-story-folder
 ```
 
 ### Extract B-roll Prompts
 
 ```bash
-npm run dev extract-broll ./output --output ./broll-prompts.txt
+npm run extract-broll ./output/your-story-folder --output ./broll-prompts.txt
 ```
 
 ## Key Design Principles

@@ -219,19 +219,32 @@ export interface SceneBeat {
   micro_turn: string;
 }
 
-export interface SceneCharacterRecast {
+export interface ImageCharacterRecast {
   char_id: CharId;
-  minimal_visual_traits: string[];
-  avoid_list: string[];
+  visible_in_frame: ('face' | 'upper_body' | 'hands' | 'full_body' | 'silhouette')[];
+  frame_specific_traits: string[];
+  ethnicity: string;
+  skin_tone: string;
+  eye_color: string;
+  frame_clothing_details: string[];
+  expression_state: string;
+}
+
+export interface ImageSettingDetails {
+  visible_objects: string[];
+  atmospheric_elements: string[];
+  composition_elements: string[];
+  lighting_quality: string;
 }
 
 export interface BrollImageBrief {
   time_offset: 'pre_scene' | 'post_scene';
   subject_count: 1 | 2;
   subject_ids: CharId[];
+  subject_recasts: ImageCharacterRecast[];
   framing: 'over_shoulder' | 'profile' | 'reflection' | 'through_glass' | 'partial_occlusion' | 'crop_past_face';
   activity_suggestion: string;
-  setting_details: string;
+  frame_specific_setting: ImageSettingDetails;
   keywords: ['candid', 'amateur'];
 }
 
@@ -253,7 +266,6 @@ export interface SceneUnit {
     axis: AxisId;
   };
   button: string;
-  scene_character_recasts: SceneCharacterRecast[];
   broll_image_brief: BrollImageBrief;
 }
 

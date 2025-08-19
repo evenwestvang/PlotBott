@@ -11,7 +11,13 @@
     "test": "vitest",
     "test:golden": "vitest test/golden",
     "lint": "eslint src/**/*.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "generate": "tsx src/index.ts generate",
+    "generate-images": "tsx src/index.ts generate-images",
+    "extract-broll": "tsx src/index.ts extract-broll",
+    "validate": "tsx src/index.ts validate",
+    "setup-comfyui": "./scripts/setup-comfyui.sh",
+    "start-comfyui": "./scripts/start-comfyui.sh"
   },
   "keywords": ["storytelling", "mckee", "narrative", "generation", "diffusion"],
   "author": "",

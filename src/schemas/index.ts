@@ -438,29 +438,64 @@ export const STORYWORLD_SCHEMA = {
       }
     },
 
-    "SceneCharacterRecast": {
+    "ImageCharacterRecast": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["char_id","minimal_visual_traits","avoid_list"],
+      "required": ["char_id","visible_in_frame","frame_specific_traits","ethnicity","skin_tone","eye_color","frame_clothing_details","expression_state"],
       "properties": {
         "char_id": { "$ref": "#/definitions/CharId" },
-        "minimal_visual_traits": {
+        "visible_in_frame": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["face","upper_body","hands","full_body","silhouette"] },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "frame_specific_traits": {
           "type": "array",
           "items": { "type": "string" },
-          "minItems": 1,
+          "minItems": 2,
+          "maxItems": 5
+        },
+        "ethnicity": { "type": "string" },
+        "skin_tone": { "type": "string" },
+        "eye_color": { "type": "string" },
+        "frame_clothing_details": {
+          "type": "array",
+          "items": { "type": "string" },
           "maxItems": 3
         },
-        "avoid_list": {
+        "expression_state": { "type": "string" }
+      }
+    },
+
+    "ImageSettingDetails": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["visible_objects","atmospheric_elements","composition_elements","lighting_quality"],
+      "properties": {
+        "visible_objects": {
           "type": "array",
-          "items": { "type": "string" }
-        }
+          "items": { "type": "string" },
+          "maxItems": 4
+        },
+        "atmospheric_elements": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 3
+        },
+        "composition_elements": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 3
+        },
+        "lighting_quality": { "type": "string" }
       }
     },
 
     "BrollImageBrief": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["time_offset","subject_count","subject_ids","framing","activity_suggestion","setting_details","keywords"],
+      "required": ["time_offset","subject_count","subject_ids","subject_recasts","framing","activity_suggestion","frame_specific_setting","keywords"],
       "properties": {
         "time_offset": { "type": "string", "enum": ["pre_scene","post_scene"] },
         "subject_count": { "type": "integer", "minimum": 1, "maximum": 2 },
@@ -471,12 +506,18 @@ export const STORYWORLD_SCHEMA = {
           "maxItems": 2,
           "uniqueItems": true
         },
+        "subject_recasts": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/ImageCharacterRecast" },
+          "minItems": 1,
+          "maxItems": 2
+        },
         "framing": {
           "type": "string",
           "enum": ["over_shoulder","profile","reflection","through_glass","partial_occlusion","crop_past_face"]
         },
         "activity_suggestion": { "type": "string" },
-        "setting_details": { "type": "string" },
+        "frame_specific_setting": { "$ref": "#/definitions/ImageSettingDetails" },
         "keywords": {
           "type": "array",
           "items": { "enum": ["candid","amateur"] },
@@ -490,7 +531,7 @@ export const STORYWORLD_SCHEMA = {
     "SceneUnit": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["scene_no","setting","characters_present","conflict_axis","objective","obstacles","beat_list","scene_value_shift","button","scene_character_recasts","broll_image_brief"],
+      "required": ["scene_no","setting","characters_present","conflict_axis","objective","obstacles","beat_list","scene_value_shift","button","broll_image_brief"],
       "properties": {
         "scene_no": { "type": "integer", "minimum": 1 },
         "setting": {
@@ -519,7 +560,6 @@ export const STORYWORLD_SCHEMA = {
           }
         },
         "button": { "type": "string" },
-        "scene_character_recasts": { "type": "array", "items": { "$ref": "#/definitions/SceneCharacterRecast" } },
         "broll_image_brief": { "$ref": "#/definitions/BrollImageBrief" }
       }
     },

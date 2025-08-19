@@ -439,20 +439,30 @@ CRITICAL: Output must be valid JSON with 3-5 scenes per episode matching this ex
         "axis": "axis_id_1"
       },
       "button": "How scene ends/transitions",
-      "scene_character_recasts": [
-        {
-          "char_id": "char_id_1",
-          "minimal_visual_traits": ["trait 1", "trait 2"],
-          "avoid_list": ["avoid this", "avoid that"]
-        }
-      ],
       "broll_image_brief": {
         "time_offset": "pre_scene",
         "subject_count": 1,
         "subject_ids": ["char_id_1"],
-        "framing": "over_shoulder",
-        "activity_suggestion": "natural activity",
-        "setting_details": "environmental details",
+        "subject_recasts": [
+          {
+            "char_id": "char_id_1",
+            "visible_in_frame": ["face", "upper_body"],
+            "frame_specific_traits": ["sharp cheekbones visible in profile", "focused expression", "tension in jawline"],
+            "ethnicity": "Asian",
+            "skin_tone": "warm olive",
+            "eye_color": "dark brown",
+            "frame_clothing_details": ["transparent fabric texture on shoulder", "geometric collar detail"],
+            "expression_state": "concentrated determination"
+          }
+        ],
+        "framing": "profile",
+        "activity_suggestion": "examining holographic data",
+        "frame_specific_setting": {
+          "visible_objects": ["floating data display", "glass architecture", "holographic interface"],
+          "atmospheric_elements": ["soft blue glow", "data particle effects"],
+          "composition_elements": ["curved glass reflection", "geometric patterns"],
+          "lighting_quality": "soft directional with blue accent"
+        },
         "keywords": ["candid", "amateur"]
       }
     }
@@ -464,13 +474,18 @@ CRITICAL B-roll constraints:
 - subject_ids must be subset of characters_present
 - keywords must be exactly ["candid", "amateur"]
 - framing must be: over_shoulder, profile, reflection, through_glass, partial_occlusion, or crop_past_face
+- subject_recasts must include ethnicity, skin_tone, eye_color for visual continuity
+- frame_specific_traits should describe what's VISIBLE in the chosen framing (2-5 traits)
+- visible_in_frame must match framing choice (profile = face/upper_body, etc.)
+- frame_specific_setting must detail scene-relevant objects and lighting
 
 Requirements:
 - Generate 3-5 scenes per episode for proper dramatic pacing
 - scene_value_shift.from must NOT equal scene_value_shift.to  
-- minimal_visual_traits max 3 items per character
+- Each character needs detailed physical description for image generation consistency
 - obstacles must be active opposition, not mere difficulty
 - Each scene should build toward episode's overall value turn
+- B-roll should capture frame-specific details, not generic scene descriptions
 
 Output: Valid ScenePlan JSON with 3-5 scenes only. No additional text or explanation.
 `;

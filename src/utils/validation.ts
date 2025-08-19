@@ -169,13 +169,16 @@ export function validateReferentialIntegrity(context: GenerationContext): void {
           errors.push(`Scene ${scene.scene_no} value shift does not turn (from === to)`);
         }
         
-        // Character recasts validation
-        for (const recast of scene.scene_character_recasts) {
+        // B-roll character recasts validation
+        for (const recast of scene.broll_image_brief.subject_recasts) {
           if (!validChars.has(recast.char_id)) {
-            errors.push(`Scene ${scene.scene_no} recast references unknown character: ${recast.char_id}`);
+            errors.push(`Scene ${scene.scene_no} b-roll recast references unknown character: ${recast.char_id}`);
           }
-          if (recast.minimal_visual_traits.length > 3) {
-            errors.push(`Scene ${scene.scene_no} recast for ${recast.char_id} has too many traits (max 3)`);
+          if (recast.frame_specific_traits.length > 5) {
+            errors.push(`Scene ${scene.scene_no} b-roll recast for ${recast.char_id} has too many traits (max 5)`);
+          }
+          if (!recast.ethnicity || !recast.skin_tone || !recast.eye_color) {
+            errors.push(`Scene ${scene.scene_no} b-roll recast for ${recast.char_id} missing required physical details`);
           }
         }
       }
