@@ -76,10 +76,18 @@ export interface Character {
   faction_affiliations: FactionId[];
   position_on_axes: Record<AxisId, number>;
   visual_bible: {
+    // Core identity
     age_range: string;
-    body_outline: string;
-    face_keypoints: string;
-    hair: string;
+    ethnicity: string;
+    skin_tone: string;
+    
+    // Physical description (specific but flexible)
+    face_description: string;
+    eye_description: string; 
+    hair_description: string;
+    build_description: string;
+    
+    // Style elements for continuity
     apparel_core: string[];
     props: string[];
     palette: string[];

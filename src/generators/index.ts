@@ -78,7 +78,8 @@ export class StoryGenerator {
   async generateCharacters(
     universe: Universe, 
     controllingIdea: ControllingIdea, 
-    factions: FactionsBundle
+    factions: FactionsBundle,
+    episodeCount: number = 6
   ): Promise<CharacterRoster> {
     let enhancedPrompt = CHARACTERS_PROMPT;
     
@@ -105,9 +106,10 @@ export class StoryGenerator {
           throw new Error('Generated characters is not a valid array.');
         }
         
-        // Ensure minimum character count
-        if (result.characters.length < 4) {
-          throw new Error(`Generated only ${result.characters.length} characters, need at least 4.`);
+        // Ensure minimum character count (3 for single episodes, 4+ for series)
+        const minCharacters = episodeCount === 1 ? 3 : 4;
+        if (result.characters.length < minCharacters) {
+          throw new Error(`Generated only ${result.characters.length} characters, need at least ${minCharacters}.`);
         }
         
         // Generate character IDs and seeds
@@ -154,6 +156,7 @@ export class StoryGenerator {
           // Fix visual_bible fields that should be arrays
           if (character.visual_bible) {
             const vb = character.visual_bible as any;
+            
             // Convert string fields to arrays by splitting on commas
             if (typeof vb.apparel_core === 'string') {
               vb.apparel_core = vb.apparel_core.split(',').map((item: string) => item.trim());
@@ -472,7 +475,9 @@ export class StoryGenerator {
           recast.ethnicity,
           recast.skin_tone,
           recast.eye_color,
-          char.visual_bible.hair,
+          char.visual_bible.hair_description,
+          char.visual_bible.face_description,
+          char.visual_bible.build_description,
           ...recast.frame_specific_traits,
           ...recast.frame_clothing_details,
           recast.expression_state
@@ -573,12 +578,19 @@ export class StoryGenerator {
     return emotionMap[shiftKey] || null;
   }
   
+  
   private async writeFile(outputDir: string, filename: string, data: any): Promise<void> {
     const fs = await import('fs/promises');
     const path = await import('path');
     
+    const fullPath = path.join(outputDir, filename);
+    const dirPath = path.dirname(fullPath);
+    
+    // Ensure directory exists
+    await fs.mkdir(dirPath, { recursive: true });
+    
     await fs.writeFile(
-      path.join(outputDir, filename),
+      fullPath,
       JSON.stringify(data, null, 2),
       'utf8'
     );
@@ -614,7 +626,7 @@ export class StoryGenerator {
     if (outputDir) await this.writeFile(outputDir, 'factions.json', factions);
     
     console.log('👥 Generating Characters...');
-    const characters = await this.generateCharacters(universe, controllingIdea, factions);
+    const characters = await this.generateCharacters(universe, controllingIdea, factions, episodeCount);
     if (outputDir) await this.writeFile(outputDir, 'characters.json', characters);
     
     // Update factions with key_figures now that we have characters

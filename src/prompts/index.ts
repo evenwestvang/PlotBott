@@ -143,17 +143,20 @@ CRITICAL: Output must be valid JSON matching this exact structure:
         "axis_id_2": -0.3
       },
       "visual_bible": {
-        "age_range": "20s-30s",
-        "body_outline": "physical description",
-        "face_keypoints": "facial features",
-        "hair": "hair description",
-        "apparel_core": ["clothing item 1", "clothing item 2"],
-        "props": ["prop 1", "prop 2"],
-        "palette": ["color 1", "color 2"],
-        "surface_textures": ["texture 1", "texture 2"],
-        "iconic_silhouette": "distinctive silhouette",
-        "style_notes": ["style note 1", "style note 2"],
-        "negatives": ["avoid this", "avoid that"]
+        "age_range": "early 30s",
+        "ethnicity": "East Asian",
+        "skin_tone": "warm olive",
+        "face_description": "oval face with sharp jawline, high cheekbones, defined features",
+        "eye_description": "almond-shaped dark brown eyes, medium size, normal spacing",
+        "hair_description": "sleek black bob with copper undertones, straight texture, precision cut",
+        "build_description": "lean athletic build, average height, confident posture",
+        "apparel_core": ["smart fabric blazer", "minimalist accessories"],
+        "props": ["holographic tablet", "neural interface jewelry"],
+        "palette": ["deep navy", "silver accents", "electric blue"],
+        "surface_textures": ["matte polymers", "brushed metal", "holographic displays"],
+        "iconic_silhouette": "sharp geometric lines with tech integration",
+        "style_notes": ["precision-tailored", "tech-forward", "professional authority"],
+        "negatives": ["overly casual", "bulky clothing", "outdated technology"]
       },
       "diffusion_control": {
         "prompt_core": "core visual prompt",
@@ -169,10 +172,18 @@ CRITICAL: Output must be valid JSON matching this exact structure:
 Requirements:
 - Character IDs must be lowercase with underscores (e.g., "annie_williams", "marcus_chen")
 - Build cross-character relationships with tension on value axes
-- Visual descriptions should be modular for scene-specific recasting
 - role_archetype must be: protagonist, antagonist, ally, foil, mentor, trickster, or confidante
 - relationship type must be: ally, rival, mentor, love, family, betrayer, or confidante
 - All array fields must be arrays, all object fields must be objects
+
+CRITICAL VISUAL_BIBLE REQUIREMENTS:
+- Provide specific, detailed descriptions - NO vague terms like "salt and pepper hair"
+- face_description: specific facial structure, jawline, cheekbones (e.g., "weathered square face with prominent jaw")
+- eye_description: shape, color, size, distinctive features (e.g., "piercing blue almond eyes with laugh lines")
+- hair_description: color with undertones, texture, length, style (e.g., "silver-streaked auburn curls, shoulder-length, wild texture")
+- build_description: physique, height, posture, distinctive traits (e.g., "stocky muscular build, shorter than average, confident stance")
+- Include specific ethnicity and skin tone for visual continuity
+- Apparel, props, palette, and surface_textures must be specific arrays
 
 Output: Valid CharacterRoster JSON only. No additional text or explanation.
 `;

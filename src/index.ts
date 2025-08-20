@@ -569,9 +569,11 @@ async function generateHTMLTreatment(context: GenerationContext, outputDir: stri
         <p><strong>VISUAL BIBLE:</strong></p>
         <ul>
             <li><strong>Age:</strong> ${char.visual_bible.age_range}</li>
-            <li><strong>Body:</strong> ${char.visual_bible.body_outline}</li>
-            <li><strong>Face:</strong> ${char.visual_bible.face_keypoints}</li>
-            <li><strong>Hair:</strong> ${char.visual_bible.hair}</li>
+            <li><strong>Ethnicity:</strong> ${char.visual_bible.ethnicity}, ${char.visual_bible.skin_tone}</li>
+            <li><strong>Face:</strong> ${char.visual_bible.face_description}</li>
+            <li><strong>Eyes:</strong> ${char.visual_bible.eye_description}</li>
+            <li><strong>Hair:</strong> ${char.visual_bible.hair_description}</li>
+            <li><strong>Build:</strong> ${char.visual_bible.build_description}</li>
             <li><strong>Apparel:</strong> ${char.visual_bible.apparel_core.join(', ')}</li>
             <li><strong>Props:</strong> ${char.visual_bible.props.join(', ')}</li>
             <li><strong>Palette:</strong> ${char.visual_bible.palette.join(', ')}</li>
@@ -855,7 +857,7 @@ function generateOutputDir(concept: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')  // Remove special chars
     .replace(/\s+/g, '-')          // Replace spaces with hyphens
-    .substring(0, 40)              // Limit length
+    .substring(0, 25)              // Shorter length to accommodate timestamp
     .replace(/^-+|-+$/g, '');      // Trim leading/trailing hyphens
   
   const now = new Date();

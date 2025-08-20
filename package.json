@@ -17,13 +17,22 @@
     "extract-broll": "tsx src/index.ts extract-broll",
     "validate": "tsx src/index.ts validate",
     "setup-comfyui": "./scripts/setup-comfyui.sh",
-    "start-comfyui": "./scripts/start-comfyui.sh"
+    "start-comfyui": "./scripts/start-comfyui.sh",
+    "generate-images-ts": "tsx scripts/generate-images.ts",
+    "generate-images-py": "python scripts/generate-images-local.py"
   },
-  "keywords": ["storytelling", "mckee", "narrative", "generation", "diffusion"],
+  "keywords": [
+    "storytelling",
+    "mckee",
+    "narrative",
+    "generation",
+    "diffusion"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.28.0",
+    "@stable-canvas/comfyui-client": "^1.4.3",
     "ajv": "^8.17.1",
     "commander": "^12.1.0",
     "dotenv": "^16.4.5",
@@ -34,7 +43,7 @@
     "@typescript-eslint/eslint-plugin": "^8.15.0",
     "@typescript-eslint/parser": "^8.15.0",
     "eslint": "^9.15.0",
-    "tsx": "^4.19.2",
+    "tsx": "^4.20.4",
     "typescript": "^5.6.3",
     "vitest": "^2.1.8"
   }

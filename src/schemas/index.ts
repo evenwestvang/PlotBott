@@ -157,12 +157,15 @@ export const STORYWORLD_SCHEMA = {
         "visual_bible": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["age_range","body_outline","face_keypoints","hair","apparel_core","props","palette","surface_textures","iconic_silhouette","style_notes","negatives"],
+          "required": ["age_range","ethnicity","skin_tone","face_description","eye_description","hair_description","build_description","apparel_core","props","palette","surface_textures","iconic_silhouette","style_notes","negatives"],
           "properties": {
             "age_range": { "type": "string" },
-            "body_outline": { "type": "string" },
-            "face_keypoints": { "type": "string" },
-            "hair": { "type": "string" },
+            "ethnicity": { "type": "string" },
+            "skin_tone": { "type": "string" },
+            "face_description": { "type": "string" },
+            "eye_description": { "type": "string" },
+            "hair_description": { "type": "string" },
+            "build_description": { "type": "string" },
             "apparel_core": { "type": "array", "items": { "type": "string" } },
             "props": { "type": "array", "items": { "type": "string" } },
             "palette": { "type": "array", "items": { "type": "string" } },
@@ -196,7 +199,7 @@ export const STORYWORLD_SCHEMA = {
         "characters": {
           "type": "array",
           "items": { "$ref": "#/definitions/Character" },
-          "minItems": 4
+          "minItems": 3
         }
       }
     },
